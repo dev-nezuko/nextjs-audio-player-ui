@@ -1,0 +1,17 @@
+node_modules/
+project_venv/
+.pnpm-store/
+.next/
+out/
+build/
+dist/
+.test-build/
+coverage/
+tmp/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.github/
