@@ -39,8 +39,8 @@ export const Library = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {tracks?.map((savedTrack, index) => (
-              <SavedTrack track={savedTrack} key={`saved-track-${index}`} />
+            {tracks?.map((savedTrack) => (
+              <SavedTrack track={savedTrack} key={savedTrack.id} />
             ))}
           </div>
         )}

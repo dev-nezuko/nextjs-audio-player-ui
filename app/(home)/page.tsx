@@ -7,32 +7,38 @@ import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
 import { searchTracks } from "@/services/tracks.service";
 import { FilteredTrack } from "@/types/sharedTypes";
 import { transformTrack } from "@/utils/helper.utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const isAuthenticated = useIsAuthenticated();
-  const isMounted = useRef(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [tracks, setTracks] = useState<FilteredTrack[] | undefined>();
 
   useEffect(() => {
-    if (!isAuthenticated || isMounted.current) {
+    if (!isAuthenticated) {
+      setTracks(undefined);
       return;
     }
 
+    let active = true;
     setIsLoading(true);
+    setError("");
     searchTracks("track")
       .then((res) => {
-        setTracks(res.tracks.items.map(transformTrack));
+        if (active) setTracks(res.tracks.items.map(transformTrack));
       })
-      .catch(() =>
-        setError("Tracks could not be loaded. Reconnect or try again later."),
-      )
-      .finally(() => setIsLoading(false));
-
-    isMounted.current = true;
-  }, [isAuthenticated, tracks]);
+      .catch(() => {
+        if (active)
+          setError("Tracks could not be loaded. Reconnect or try again later.");
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return (
@@ -74,8 +80,8 @@ export default function Home() {
       )}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 mt-10">
-          {Array.from({ length: 10 }, (loader) => (
-            <TracksLoader key={`loader-${loader}`} />
+          {Array.from({ length: 10 }, (_, index) => (
+            <TracksLoader key={`loader-${index}`} />
           ))}
         </div>
       ) : (

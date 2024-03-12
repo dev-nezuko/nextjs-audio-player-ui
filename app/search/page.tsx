@@ -31,8 +31,8 @@ const SearchForm = () => {
       ) : (
         <div className="overflow-y-auto h-full p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 p-4">
-            {searchedTracks?.map((searchedTrack, index) => (
-              <Track track={searchedTrack} key={`searched-track-${index}`} />
+            {searchedTracks?.map((searchedTrack) => (
+              <Track track={searchedTrack} key={searchedTrack.id} />
             ))}
           </div>
         </div>

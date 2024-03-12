@@ -21,6 +21,7 @@ export const SearchBar: React.FC<Props> = ({
   useEffect(() => {
     let active = true;
     if (!isAuthenticated || !searchInput.trim()) {
+      setError("");
       setSearchedTracks([]);
       setIsLoading(false);
       return;

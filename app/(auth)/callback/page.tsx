@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getToken } from "@/services/auth.service";
 
-export default function Callback() {
+function CallbackStatus() {
   const params = useSearchParams();
   const router = useRouter();
   const started = useRef(false);
@@ -39,5 +39,13 @@ export default function Callback() {
         </Link>
       )}
     </section>
+  );
+}
+
+export default function Callback() {
+  return (
+    <Suspense>
+      <CallbackStatus />
+    </Suspense>
   );
 }

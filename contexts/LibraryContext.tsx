@@ -2,7 +2,7 @@
 
 import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
 import { getSavedTracks, saveTrack } from "@/services/tracks.service";
-import { FilteredTrack } from "@/types/sharedTypes";
+import { FilteredTrack, TrackType } from "@/types/sharedTypes";
 import { transformTrack } from "@/utils/helper.utils";
 import React, {
   createContext,
@@ -48,7 +48,9 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
     getSavedTracks()
       .then((res) => {
         setTracks(
-          res.items.map((item: any) => transformTrack(item.track)) || [],
+          res.items.map((item: { track: TrackType }) =>
+            transformTrack(item.track),
+          ),
         );
       })
       .catch(() => setError("Saved songs could not be loaded."))
@@ -58,6 +60,7 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
   const addToLibrary = useCallback(
     async (id: string) => {
       try {
+        setError("");
         await saveTrack(id);
         getTracks();
       } catch {
@@ -69,7 +72,7 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
 
   useEffect(() => {
     getTracks();
-  }, [isAuthenticated]);
+  }, [getTracks]);
 
   return (
     <LibraryContext.Provider value={{ tracks, isLoading, error, addToLibrary }}>
@@ -81,7 +84,7 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
 export const useLibrary = (): LibraryContextProps => {
   const context = useContext(LibraryContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useLibrary must be used within a LibraryProvider");
   }
   return context;
 };
