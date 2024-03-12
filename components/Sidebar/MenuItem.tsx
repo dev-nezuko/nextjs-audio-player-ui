@@ -1,25 +1,32 @@
-import Link from 'next/link';
-import { IconType } from 'react-icons';
-import { twMerge } from 'tailwind-merge';
+import Link from "next/link";
+import { IconType } from "react-icons";
+import { twMerge } from "tailwind-merge";
 
 interface MenuItemProps {
   icon: IconType;
   label: string;
   active?: boolean;
   href: string;
+  className?: string;
 }
 
-export const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, label, active, href }) => {
-  return (
-    <Link
-      href={href}
-      className={twMerge(
-        'flex flex-row h-auto items-center w-full gap-x-4 text-md font-medium cursor-pointer hover:text-white transition text-neutral-400 py-1',
-        active && 'text-white'
-      )}
-    >
-      <Icon size={25} />
-      <p className="truncate w-100">{label}</p>
-    </Link>
-  );
-};
+export const MenuItem: React.FC<MenuItemProps> = ({
+  icon: Icon,
+  label,
+  active,
+  href,
+  className,
+}) => (
+  <Link
+    href={href}
+    aria-current={active ? "page" : undefined}
+    className={twMerge(
+      "flex items-center gap-3 rounded-md px-3 py-2 font-medium text-muted transition-colors hover:bg-raised hover:text-paper",
+      active && "bg-raised text-paper",
+      className,
+    )}
+  >
+    <Icon aria-hidden size={20} className={active ? "text-accent" : undefined} />
+    <span>{label}</span>
+  </Link>
+);

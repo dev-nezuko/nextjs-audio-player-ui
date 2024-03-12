@@ -2,49 +2,55 @@
 
 import { useState } from "react";
 
-import { Header } from "@/components/Header/Header";
+import { ConnectPrompt } from "@/components/ConnectPrompt/ConnectPrompt";
+import { PageHeading } from "@/components/PageHeading/PageHeading";
 import { SearchBar } from "@/components/SearchBar/SearchBar";
-import { TracksLoader } from "@/components/SkeletonLoader/TracksLoader";
-import { Track } from "@/components/Track/Track";
+import { TrackList } from "@/components/TrackList/TrackList";
 import { useLibraryAccess } from "@/hooks/useLibraryAccess";
 import { useTrackSearch } from "@/hooks/useTrackSearch";
+import { isDemoMode } from "@/services/tracks.service";
 
-const SearchForm = () => {
+const SearchPage = () => {
   const canBrowse = useLibraryAccess();
   const [query, setQuery] = useState("");
-  const {
-    tracks: searchedTracks,
-    isLoading,
-    error,
-  } = useTrackSearch(query, { enabled: canBrowse, delayMs: 400 });
+  const { tracks, isLoading, error } = useTrackSearch(query, {
+    enabled: canBrowse,
+    delayMs: 400,
+  });
+  const trimmed = query.trim();
 
   return (
-    <div className="bg-neutral-900 rounded-lg h-full w-full overflow-hidden overflow-y-auto">
-      <Header>
-        <SearchBar
-          value={query}
-          onChange={setQuery}
-          disabled={!canBrowse}
-          error={error}
-        />
-      </Header>
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 mt-10">
-          {Array.from({ length: 8 }, (_, index) => (
-            <TracksLoader key={`track-loader-${index}`} />
-          ))}
-        </div>
+    <>
+      <PageHeading eyebrow="Search" title="Find a track" />
+      {!canBrowse ? (
+        <ConnectPrompt />
       ) : (
-        <div className="overflow-y-auto h-full p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 p-4">
-            {searchedTracks.map((searchedTrack) => (
-              <Track track={searchedTrack} key={searchedTrack.id} />
-            ))}
+        <>
+          <SearchBar value={query} onChange={setQuery} />
+          <div className="mt-8" aria-live="polite">
+            {error ? (
+              <p role="alert" className="text-danger">
+                {error}
+              </p>
+            ) : !trimmed ? (
+              <p className="text-muted">
+                Start typing to search by title, artist or album
+                {isDemoMode() && " (try “harbour” or “Juniper”)"}.
+              </p>
+            ) : !isLoading && tracks.length === 0 ? (
+              <p className="text-muted">Nothing matches “{trimmed}”.</p>
+            ) : (
+              <TrackList
+                tracks={tracks}
+                isLoading={isLoading}
+                label={`Results for ${trimmed}`}
+              />
+            )}
           </div>
-        </div>
+        </>
       )}
-    </div>
+    </>
   );
 };
 
-export default SearchForm;
+export default SearchPage;

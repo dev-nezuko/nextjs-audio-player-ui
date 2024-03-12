@@ -37,9 +37,9 @@ function artwork(title: string, hue: number) {
   const offset = (title.length * 37) % 100;
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">` +
-    `<rect width="100" height="100" fill="hsl(${hue} 45% 22%)"/>` +
-    `<circle cx="${30 + offset / 3}" cy="62" r="34" fill="hsl(${hue} 70% 58%)"/>` +
-    `<rect x="0" y="${70 - offset / 5}" width="100" height="8" fill="hsl(${(hue + 40) % 360} 60% 80%)"/>` +
+    `<rect width="100" height="100" fill="hsl(${hue} 30% 20%)"/>` +
+    `<circle cx="${30 + offset / 3}" cy="62" r="34" fill="hsl(${hue} 55% 56%)"/>` +
+    `<rect x="0" y="${70 - offset / 5}" width="100" height="8" fill="hsl(${(hue + 40) % 360} 45% 78%)"/>` +
     `</svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }

@@ -11,10 +11,13 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
+  useMemo,
 } from "react";
 
 interface LibraryContextProps {
   tracks: FilteredTrack[] | undefined;
+  savedIds: ReadonlySet<string>;
+  savingId: string | null;
   isLoading: boolean;
   error: string;
   addToLibrary: (id: string) => void;
@@ -28,11 +31,14 @@ interface LibraryProviderProps {
   children: ReactNode;
 }
 
+const EMPTY: FilteredTrack[] = [];
+
 export const LibraryProvider: React.FC<LibraryProviderProps> = ({
   children,
 }) => {
   const canBrowse = useLibraryAccess();
   const [reloadCount, setReloadCount] = useState(0);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState("");
   const [loaded, setLoaded] = useState<{
     tracks?: FilteredTrack[];
@@ -45,10 +51,15 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
     getSavedTracks()
       .then((res) => {
         if (active)
-          setLoaded({ tracks: res.items.map((item) => transformTrack(item.track)) });
+          setLoaded({
+            tracks: res.items.map((item) => transformTrack(item.track)),
+          });
       })
       .catch(() => {
-        if (active) setLoaded({ error: "Saved songs could not be loaded." });
+        if (active) setLoaded({ error: "Saved tracks could not be loaded." });
+      })
+      .finally(() => {
+        if (active) setSavingId(null);
       });
     return () => {
       active = false;
@@ -57,22 +68,30 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
 
   const addToLibrary = useCallback(async (id: string) => {
     setSaveError("");
+    setSavingId(id);
     try {
       await saveTrack(id);
       setReloadCount((count) => count + 1);
     } catch {
+      setSavingId(null);
       setSaveError("Track could not be saved. Try reconnecting.");
     }
   }, []);
 
-  const value: LibraryContextProps = canBrowse
-    ? {
-        tracks: loaded.tracks,
-        isLoading: !loaded.tracks && !loaded.error,
-        error: saveError || loaded.error || "",
-        addToLibrary,
-      }
-    : { tracks: [], isLoading: false, error: "", addToLibrary };
+  const tracks = canBrowse ? loaded.tracks : EMPTY;
+  const savedIds = useMemo(
+    () => new Set((tracks ?? EMPTY).map((track) => track.id)),
+    [tracks],
+  );
+
+  const value: LibraryContextProps = {
+    tracks,
+    savedIds,
+    savingId,
+    isLoading: canBrowse && !loaded.tracks && !loaded.error,
+    error: canBrowse ? saveError || loaded.error || "" : "",
+    addToLibrary,
+  };
 
   return (
     <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>

@@ -1,11 +1,38 @@
 "use client";
 
-import { Header } from "@/components/Header/Header";
-import { TracksLoader } from "@/components/SkeletonLoader/TracksLoader";
-import { Track } from "@/components/Track/Track";
+import Image from "next/image";
+
+import { ConnectPrompt } from "@/components/ConnectPrompt/ConnectPrompt";
+import { PageHeading } from "@/components/PageHeading/PageHeading";
+import { SaveButton } from "@/components/Track/Track";
+import { TrackList } from "@/components/TrackList/TrackList";
 import { useLibraryAccess } from "@/hooks/useLibraryAccess";
 import { useTrackSearch } from "@/hooks/useTrackSearch";
-import { getFeaturedTracks } from "@/services/tracks.service";
+import { getFeaturedTracks, isDemoMode } from "@/services/tracks.service";
+import { FilteredTrack } from "@/types/sharedTypes";
+
+const Pick = ({ track }: { track: FilteredTrack }) => (
+  <section
+    aria-labelledby="pick-title"
+    className="mb-10 flex flex-col gap-5 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-center"
+  >
+    <div className="relative aspect-square w-full max-w-40 shrink-0 overflow-hidden rounded-md shadow-lg shadow-black/40">
+      <Image src={track.image} alt="" fill sizes="160px" className="object-cover" priority />
+    </div>
+    <div className="min-w-0 space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+        Top of the crate
+      </p>
+      <h2 id="pick-title" className="font-display text-2xl font-semibold">
+        {track.name}
+      </h2>
+      <p className="text-muted">
+        {track.artist} · <span className="font-display italic">{track.albumName}</span>
+      </p>
+      <SaveButton track={track} alwaysShowLabel />
+    </div>
+  </section>
+);
 
 export default function Home() {
   const canBrowse = useLibraryAccess();
@@ -14,59 +41,34 @@ export default function Home() {
     load: getFeaturedTracks,
   });
 
-  if (!canBrowse) {
-    return (
-      <div className="bg-neutral-900 rounded-lg h-full w-full overflow-hidden overflow-y-auto">
-        <Header />
-        <section className="mx-8 max-w-xl space-y-5 pb-10">
-          <p className="text-emerald-300 text-sm uppercase tracking-widest">
-            Next.js integration prototype
-          </p>
-          <h1 className="font-bold text-3xl">
-            Your Spotify library, without the clutter
-          </h1>
-          <p className="text-neutral-300">
-            Connect a configured Spotify app to search tracks and browse saved
-            songs. This prototype does not play audio.
-          </p>
-          <ol className="list-decimal pl-5 text-neutral-400 space-y-2">
-            <li>Configure a public app client ID and loopback redirect.</li>
-            <li>Connect using authorization code with PKCE.</li>
-            <li>Search tracks and save them to your library.</li>
-          </ol>
-          <p className="text-sm text-neutral-400">
-            No client secret is needed. Tokens stay in this tab’s session
-            storage.
-          </p>
-        </section>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-neutral-900 rounded-lg h-full w-full overflow-hidden overflow-y-auto">
-      <Header />
-      <h1 className="mx-8 mb-10 font-bold text-3xl">Welcome Back!</h1>
-      {error && (
-        <p role="alert" className="mx-8 text-red-300">
-          {error}
-        </p>
-      )}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 mt-10">
-          {Array.from({ length: 10 }, (_, index) => (
-            <TracksLoader key={`loader-${index}`} />
-          ))}
-        </div>
+    <>
+      <PageHeading eyebrow="Browse" title="Dig through the crate">
+        {isDemoMode()
+          ? "An offline catalogue of invented tracks. Save the ones you like; your library lasts for this browser tab."
+          : "Tracks from your connected account. Save the ones you like to your library."}
+      </PageHeading>
+      {!canBrowse ? (
+        <ConnectPrompt />
       ) : (
-        <div className="overflow-y-auto h-full p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 p-4">
-            {tracks.map((searchedTrack) => (
-              <Track track={searchedTrack} key={searchedTrack.id} />
-            ))}
-          </div>
-        </div>
+        <>
+          {error && (
+            <p role="alert" className="mb-6 text-danger">
+              {error}
+            </p>
+          )}
+          {!isLoading && tracks[0] && <Pick track={tracks[0]} />}
+          {!isLoading && !error && tracks.length === 0 ? (
+            <p className="text-muted">No tracks to show yet.</p>
+          ) : (
+            <TrackList
+              tracks={tracks.slice(1)}
+              isLoading={isLoading}
+              label="Catalogue tracks"
+            />
+          )}
+        </>
       )}
-    </div>
+    </>
   );
 }

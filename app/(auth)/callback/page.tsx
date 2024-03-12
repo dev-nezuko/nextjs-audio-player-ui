@@ -24,16 +24,16 @@ function CallbackStatus() {
       );
   }, [params, router]);
   return (
-    <section className="p-8">
-      <h1 className="text-2xl font-bold">Spotify sign-in</h1>
+    <section className="max-w-xl">
+      <h1 className="font-display text-3xl font-semibold">Finishing sign-in</h1>
       <p role="status" className="my-4">
         {isIncomplete
           ? "Sign-in was cancelled or the callback is incomplete. Start again."
           : error || "Completing sign-in…"}
       </p>
       {(isIncomplete || error) && (
-        <Link href="/" className="underline">
-          Return to library browser
+        <Link href="/" className="text-accent underline underline-offset-4">
+          Back to browsing
         </Link>
       )}
     </section>

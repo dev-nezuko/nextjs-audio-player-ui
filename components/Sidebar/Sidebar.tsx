@@ -1,14 +1,16 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HiHome } from "react-icons/hi";
-import { BiSearch } from "react-icons/bi";
+import { IconType } from "react-icons";
+import { BiLibrary, BiSearch } from "react-icons/bi";
+import { PiVinylRecord } from "react-icons/pi";
 
+import { Header } from "../Header/Header";
+import { Library } from "../Library/Library";
 import { MenuBox } from "./MenuBox";
 import { MenuItem } from "./MenuItem";
-import { Library } from "../Library/Library";
-import { IconType } from "react-icons";
 
 interface Route {
   icon: IconType;
@@ -17,45 +19,75 @@ interface Route {
 }
 
 const routes: Route[] = [
-  {
-    icon: HiHome,
-    label: "Home",
-    href: "/",
-  },
-  {
-    icon: BiSearch,
-    label: "Search",
-    href: "/search",
-  },
+  { icon: PiVinylRecord, label: "Browse", href: "/" },
+  { icon: BiSearch, label: "Search", href: "/search" },
+  { icon: BiLibrary, label: "Library", href: "/library" },
 ];
+
+const Wordmark = () => (
+  <Link href="/" className="font-display text-2xl font-semibold tracking-tight">
+    Crate<span className="text-accent">.</span>
+  </Link>
+);
 
 export const Sidebar: React.FC<{ children?: React.ReactNode }> = ({
   children,
 }) => {
   const pathname = usePathname();
 
-  const isRouteActive = (route: Route) => pathname === route.href;
-
   return (
-    <div className="flex h-full">
-      <div className="hidden md:flex flex-col gap-y-2 bg-black h-full w-[300px] p-2">
-        <MenuBox className="flex flex-col gap-y-4 px-5 py-4">
+    <div className="min-h-dvh md:grid md:grid-cols-[17rem_minmax(0,1fr)]">
+      <aside
+        aria-label="Navigation and saved tracks"
+        className="hidden md:flex md:sticky md:top-0 md:h-dvh flex-col gap-3 border-r border-line p-3"
+      >
+        <div className="px-3 pt-3 pb-1">
+          <Wordmark />
+        </div>
+        <nav aria-label="Primary">
+          <MenuBox className="flex flex-col gap-1 p-2">
+            {routes.map((route) => (
+              <MenuItem
+                key={route.href}
+                active={pathname === route.href}
+                {...route}
+              />
+            ))}
+          </MenuBox>
+        </nav>
+        <MenuBox className="min-h-0 flex-1 overflow-y-auto">
+          <Library />
+        </MenuBox>
+      </aside>
+
+      <div className="flex min-w-0 flex-col">
+        <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-3 md:px-10">
+          <div className="md:hidden">
+            <Wordmark />
+          </div>
+          <Header className="ml-auto" />
+        </div>
+        <nav
+          aria-label="Primary"
+          className="flex gap-1 border-b border-line px-2 py-2 md:hidden"
+        >
           {routes.map((route) => (
             <MenuItem
-              key={route.label}
-              active={isRouteActive(route)}
+              key={route.href}
+              active={pathname === route.href}
+              className="flex-1 justify-center text-sm"
               {...route}
             />
           ))}
-        </MenuBox>
-        <MenuBox className="overflow-y-auto h-full">
-          <Library />
-        </MenuBox>
+        </nav>
+        <main id="main" className="flex-1 px-4 py-8 md:px-10">
+          {children}
+        </main>
+        <footer className="px-4 pb-6 text-xs text-muted md:px-10">
+          Crate is a browsing prototype: it searches and saves tracks but does
+          not play audio.
+        </footer>
       </div>
-
-      <main className="h-full flex-1 min-w-0 overflow-y-auto py-2">
-        {children}
-      </main>
     </div>
   );
 };

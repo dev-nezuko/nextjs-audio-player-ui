@@ -1,27 +1,22 @@
 import React from "react";
-import { IconType } from "react-icons";
 import { twMerge } from "tailwind-merge";
 
-type Variant = "primary" | "secondary" | "round";
+type Variant = "primary" | "secondary" | "quiet";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
-  icon?: IconType;
 };
 
-export const BUTTON_VARIANTS = {
-  primary:
-    "rounded-full bg-green-500 flex items-center justify-center cursor-pointer text-black font-bold hover:opacity-75 transition px-6 py-2",
+export const BUTTON_VARIANTS: Record<Variant, string> = {
+  primary: "bg-accent text-ink hover:bg-accent-strong font-semibold px-5 py-2",
   secondary:
-    "rounded-full bg-white flex items-center justify-center cursor-pointer text-black font-bold hover:opacity-75 transition px-6 py-2",
-  round:
-    "rounded-full px-0 py-2 bg-neutral-900 flex items-center justify-center cursor-pointer hover:opacity-75 transition",
-} as const;
+    "border border-line text-paper hover:border-muted font-medium px-5 py-2",
+  quiet:
+    "text-muted hover:text-paper hover:bg-raised font-medium px-3 py-1.5 text-sm",
+};
 
 export const Button = ({
   variant = "primary",
-  icon: Icon,
-  children,
   className,
   type = "button",
   ...props
@@ -30,11 +25,10 @@ export const Button = ({
     type={type}
     {...props}
     className={twMerge(
+      "inline-flex items-center justify-center gap-2 rounded-full transition-colors",
+      "disabled:cursor-not-allowed disabled:opacity-60",
       BUTTON_VARIANTS[variant],
-      "disabled:cursor-not-allowed disabled:opacity-50",
       className,
     )}
-  >
-    {Icon ? <Icon className="text-neutral-300" size={20} /> : children}
-  </button>
+  />
 );
