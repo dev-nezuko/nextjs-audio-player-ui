@@ -9,16 +9,12 @@ function CallbackStatus() {
   const router = useRouter();
   const started = useRef(false);
   const [error, setError] = useState("");
+  const isIncomplete = !params.get("code") || Boolean(params.get("error"));
   useEffect(() => {
     if (started.current) return;
     started.current = true;
     const code = params.get("code");
-    if (!code || params.get("error")) {
-      setError(
-        "Sign-in was cancelled or the callback is incomplete. Start again.",
-      );
-      return;
-    }
+    if (!code || params.get("error")) return;
     getToken(code, params.get("state"))
       .then(() => router.replace("/"))
       .catch(() =>
@@ -31,9 +27,11 @@ function CallbackStatus() {
     <section className="p-8">
       <h1 className="text-2xl font-bold">Spotify sign-in</h1>
       <p role="status" className="my-4">
-        {error || "Completing sign-in…"}
+        {isIncomplete
+          ? "Sign-in was cancelled or the callback is incomplete. Start again."
+          : error || "Completing sign-in…"}
       </p>
-      {error && (
+      {(isIncomplete || error) && (
         <Link href="/" className="underline">
           Return to library browser
         </Link>

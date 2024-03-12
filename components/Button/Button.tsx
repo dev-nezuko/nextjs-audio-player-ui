@@ -25,7 +25,7 @@ export const Button = ({
   className,
   type = "button",
   ...props
-}: ButtonProps): JSX.Element => (
+}: ButtonProps) => (
   <button
     type={type}
     {...props}

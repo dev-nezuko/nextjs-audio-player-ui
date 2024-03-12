@@ -2,7 +2,7 @@
 
 import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
 import { getSavedTracks, saveTrack } from "@/services/tracks.service";
-import { FilteredTrack, TrackType } from "@/types/sharedTypes";
+import { FilteredTrack } from "@/types/sharedTypes";
 import { transformTrack } from "@/utils/helper.utils";
 import React, {
   createContext,
@@ -32,52 +32,50 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
   children,
 }) => {
   const isAuthenticated = useIsAuthenticated();
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [tracks, setTracks] = useState<FilteredTrack[] | undefined>();
-
-  const getTracks = useCallback(() => {
-    if (!isAuthenticated) {
-      setTracks([]);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError("");
-    getSavedTracks()
-      .then((res) => {
-        setTracks(
-          res.items.map((item: { track: TrackType }) =>
-            transformTrack(item.track),
-          ),
-        );
-      })
-      .catch(() => setError("Saved songs could not be loaded."))
-      .finally(() => setIsLoading(false));
-  }, [isAuthenticated]);
-
-  const addToLibrary = useCallback(
-    async (id: string) => {
-      try {
-        setError("");
-        await saveTrack(id);
-        getTracks();
-      } catch {
-        setError("Track could not be saved. Try reconnecting.");
-      }
-    },
-    [getTracks],
-  );
+  const [reloadCount, setReloadCount] = useState(0);
+  const [saveError, setSaveError] = useState("");
+  const [loaded, setLoaded] = useState<{
+    tracks?: FilteredTrack[];
+    error?: string;
+  }>({});
 
   useEffect(() => {
-    getTracks();
-  }, [getTracks]);
+    if (!isAuthenticated) return;
+    let active = true;
+    getSavedTracks()
+      .then((res) => {
+        if (active)
+          setLoaded({ tracks: res.items.map((item) => transformTrack(item.track)) });
+      })
+      .catch(() => {
+        if (active) setLoaded({ error: "Saved songs could not be loaded." });
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, reloadCount]);
+
+  const addToLibrary = useCallback(async (id: string) => {
+    setSaveError("");
+    try {
+      await saveTrack(id);
+      setReloadCount((count) => count + 1);
+    } catch {
+      setSaveError("Track could not be saved. Try reconnecting.");
+    }
+  }, []);
+
+  const value: LibraryContextProps = isAuthenticated
+    ? {
+        tracks: loaded.tracks,
+        isLoading: !loaded.tracks && !loaded.error,
+        error: saveError || loaded.error || "",
+        addToLibrary,
+      }
+    : { tracks: [], isLoading: false, error: "", addToLibrary };
 
   return (
-    <LibraryContext.Provider value={{ tracks, isLoading, error, addToLibrary }}>
-      {children}
-    </LibraryContext.Provider>
+    <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>
   );
 };
 

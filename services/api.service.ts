@@ -1,12 +1,14 @@
 import { refreshSpotifyToken } from "./auth.service";
 
-async function request(
+type FormBody = Record<string, string>;
+
+async function request<T>(
   isAuthUrl: boolean,
   method: string,
   endpoint: string,
-  body?: any,
+  body?: FormBody,
   retried = false,
-): Promise<any> {
+): Promise<T> {
   const token =
     typeof window !== "undefined"
       ? sessionStorage.getItem("access_token")
@@ -35,19 +37,21 @@ async function request(
   );
   if (response.status === 401 && !isAuthUrl && !retried) {
     await refreshSpotifyToken();
-    return request(isAuthUrl, method, endpoint, body, true);
+    return request<T>(isAuthUrl, method, endpoint, body, true);
   }
   if (!response.ok)
     throw new Error(`Spotify request failed (${response.status})`);
-  if (response.status === 204) return null;
-  return response.json();
+  if (response.status === 204) return null as T;
+  return response.json() as Promise<T>;
 }
+
 const service = (auth: boolean) => ({
-  get: (endpoint: string, body?: any) => request(auth, "GET", endpoint, body),
-  post: (endpoint: string, body?: any) => request(auth, "POST", endpoint, body),
-  put: (endpoint: string, body?: any) => request(auth, "PUT", endpoint, body),
-  delete: (endpoint: string, body?: any) =>
-    request(auth, "DELETE", endpoint, body),
+  get: <T>(endpoint: string) => request<T>(auth, "GET", endpoint),
+  post: <T>(endpoint: string, body?: FormBody) =>
+    request<T>(auth, "POST", endpoint, body),
+  put: <T>(endpoint: string, body?: FormBody) =>
+    request<T>(auth, "PUT", endpoint, body),
+  delete: <T>(endpoint: string) => request<T>(auth, "DELETE", endpoint),
 });
 export const baseService = service(false);
 export const authService = service(true);

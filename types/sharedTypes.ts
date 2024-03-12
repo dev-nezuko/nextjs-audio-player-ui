@@ -22,3 +22,11 @@ export interface FilteredTrack {
   albumName: string;
   artist: string;
 }
+
+export interface SearchResponse {
+  tracks: { items: TrackType[] };
+}
+
+export interface SavedTracksResponse {
+  items: { track: TrackType }[];
+}

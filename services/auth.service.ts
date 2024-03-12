@@ -1,7 +1,12 @@
 import { authService } from "./api.service";
 import { consumeOAuthTransaction, handleLogout } from "../utils/auth.utils";
 
-function storeTokens(response: any) {
+interface TokenResponse {
+  access_token?: unknown;
+  refresh_token?: unknown;
+}
+
+function storeTokens(response: TokenResponse | null) {
   if (typeof response?.access_token !== "string" || !response.access_token)
     throw new Error("Invalid token response");
   sessionStorage.setItem("access_token", response.access_token);
@@ -12,7 +17,7 @@ function storeTokens(response: any) {
 
 export const getToken = async (code: string, state: string | null) => {
   const transaction = consumeOAuthTransaction(state);
-  const response = await authService.post("/api/token", {
+  const response = await authService.post<TokenResponse>("/api/token", {
     grant_type: "authorization_code",
     code,
     redirect_uri: transaction.redirectUri,
@@ -29,7 +34,7 @@ export const refreshSpotifyToken = (): Promise<void> => {
     const refreshToken = sessionStorage.getItem("refresh_token");
     if (!refreshToken) throw new Error("Sign in again");
     try {
-      const response = await authService.post("/api/token", {
+      const response = await authService.post<TokenResponse>("/api/token", {
         grant_type: "refresh_token",
         refresh_token: refreshToken,
         client_id: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "",

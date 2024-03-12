@@ -4,41 +4,13 @@ import { Header } from "@/components/Header/Header";
 import { TracksLoader } from "@/components/SkeletonLoader/TracksLoader";
 import { Track } from "@/components/Track/Track";
 import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
-import { searchTracks } from "@/services/tracks.service";
-import { FilteredTrack } from "@/types/sharedTypes";
-import { transformTrack } from "@/utils/helper.utils";
-import { useEffect, useState } from "react";
+import { useTrackSearch } from "@/hooks/useTrackSearch";
 
 export default function Home() {
   const isAuthenticated = useIsAuthenticated();
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [tracks, setTracks] = useState<FilteredTrack[] | undefined>();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setTracks(undefined);
-      return;
-    }
-
-    let active = true;
-    setIsLoading(true);
-    setError("");
-    searchTracks("track")
-      .then((res) => {
-        if (active) setTracks(res.tracks.items.map(transformTrack));
-      })
-      .catch(() => {
-        if (active)
-          setError("Tracks could not be loaded. Reconnect or try again later.");
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [isAuthenticated]);
+  const { tracks, isLoading, error } = useTrackSearch("track", {
+    enabled: isAuthenticated,
+  });
 
   if (!isAuthenticated) {
     return (
@@ -87,7 +59,7 @@ export default function Home() {
       ) : (
         <div className="overflow-y-auto h-full p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 p-4">
-            {tracks?.map((searchedTrack) => (
+            {tracks.map((searchedTrack) => (
               <Track track={searchedTrack} key={searchedTrack.id} />
             ))}
           </div>
