@@ -3,16 +3,18 @@
 import { Header } from "@/components/Header/Header";
 import { TracksLoader } from "@/components/SkeletonLoader/TracksLoader";
 import { Track } from "@/components/Track/Track";
-import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
+import { useLibraryAccess } from "@/hooks/useLibraryAccess";
 import { useTrackSearch } from "@/hooks/useTrackSearch";
+import { getFeaturedTracks } from "@/services/tracks.service";
 
 export default function Home() {
-  const isAuthenticated = useIsAuthenticated();
-  const { tracks, isLoading, error } = useTrackSearch("track", {
-    enabled: isAuthenticated,
+  const canBrowse = useLibraryAccess();
+  const { tracks, isLoading, error } = useTrackSearch("featured", {
+    enabled: canBrowse,
+    load: getFeaturedTracks,
   });
 
-  if (!isAuthenticated) {
+  if (!canBrowse) {
     return (
       <div className="bg-neutral-900 rounded-lg h-full w-full overflow-hidden overflow-y-auto">
         <Header />

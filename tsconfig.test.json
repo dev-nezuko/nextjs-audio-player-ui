@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "outDir": ".test-build",
+    "module": "commonjs",
+    "target": "es2022",
+    "lib": ["dom", "es2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noEmit": false,
+    "incremental": false
+  },
+  "files": [
+    "utils/auth.utils.ts",
+    "utils/helper.utils.ts",
+    "services/auth.service.ts",
+    "services/api.service.ts",
+    "services/tracks.service.ts",
+    "services/demo.catalogue.ts"
+  ]
+}

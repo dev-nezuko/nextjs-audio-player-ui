@@ -1,4 +1,4 @@
-import { TrackType } from "@/types/sharedTypes";
+import type { TrackType } from "../types/sharedTypes";
 
 export const transformTrack = (track: TrackType) => ({
   id: track.id,

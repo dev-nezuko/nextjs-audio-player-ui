@@ -11,6 +11,7 @@ import { ComponentProps } from "@/types/sharedTypes";
 import { handleLogout, redirectToSpotifyLogin } from "@/utils/auth.utils";
 import { Button } from "../Button/Button";
 import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
+import { isDemoMode } from "@/services/tracks.service";
 
 export const Header: React.FC<ComponentProps> = ({ children, className }) => {
   const isAuthenticated = useIsAuthenticated();
@@ -59,13 +60,16 @@ export const Header: React.FC<ComponentProps> = ({ children, className }) => {
         </div>
         {children}
         <div className="flex justify-between items-center gap-x-4">
-          {isAuthenticated ? (
+          {isDemoMode() ? (
+            <span className="rounded-full border border-neutral-600 px-4 py-2 text-sm">
+              Demo catalogue
+            </span>
+          ) : isAuthenticated ? (
             <Button variant="secondary" onClick={handleLogout}>
               Logout
             </Button>
           ) : (
             <Button
-              disabled={!process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID}
               onClick={() =>
                 redirectToSpotifyLogin().catch(() =>
                   setError(
@@ -74,9 +78,7 @@ export const Header: React.FC<ComponentProps> = ({ children, className }) => {
                 )
               }
             >
-              {process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID
-                ? "Connect Spotify"
-                : "Configure Spotify client"}
+              Connect Spotify
             </Button>
           )}
         </div>

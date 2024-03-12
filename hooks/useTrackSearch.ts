@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { searchTracks } from "@/services/tracks.service";
-import { FilteredTrack } from "@/types/sharedTypes";
+import { FilteredTrack, SearchResponse } from "@/types/sharedTypes";
 import { transformTrack } from "@/utils/helper.utils";
 
 interface SearchResult {
@@ -12,10 +12,21 @@ interface SearchResult {
 
 const NO_RESULTS: FilteredTrack[] = [];
 
-/** Runs a track search for `query` once `enabled`, waiting `delayMs` so typing does not fire a request per keystroke. */
+/**
+ * Runs `load(query)` once `enabled`, waiting `delayMs` so typing does not fire
+ * a request per keystroke. `load` must be a stable (module-level) function.
+ */
 export function useTrackSearch(
   query: string,
-  { enabled, delayMs = 0 }: { enabled: boolean; delayMs?: number },
+  {
+    enabled,
+    delayMs = 0,
+    load = searchTracks,
+  }: {
+    enabled: boolean;
+    delayMs?: number;
+    load?: (query: string) => Promise<SearchResponse>;
+  },
 ) {
   const trimmed = query.trim();
   const [result, setResult] = useState<SearchResult>({ query: "" });
@@ -24,7 +35,7 @@ export function useTrackSearch(
     if (!enabled || !trimmed) return;
     let active = true;
     const timer = setTimeout(() => {
-      searchTracks(trimmed)
+      load(trimmed)
         .then((response) => {
           if (active)
             setResult({
@@ -44,7 +55,7 @@ export function useTrackSearch(
       active = false;
       clearTimeout(timer);
     };
-  }, [enabled, trimmed, delayMs]);
+  }, [enabled, trimmed, delayMs, load]);
 
   if (!enabled || !trimmed)
     return { tracks: NO_RESULTS, isLoading: false, error: "" };

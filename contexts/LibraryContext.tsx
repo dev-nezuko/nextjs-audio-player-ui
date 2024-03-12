@@ -1,6 +1,6 @@
 "use client";
 
-import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
+import { useLibraryAccess } from "@/hooks/useLibraryAccess";
 import { getSavedTracks, saveTrack } from "@/services/tracks.service";
 import { FilteredTrack } from "@/types/sharedTypes";
 import { transformTrack } from "@/utils/helper.utils";
@@ -31,7 +31,7 @@ interface LibraryProviderProps {
 export const LibraryProvider: React.FC<LibraryProviderProps> = ({
   children,
 }) => {
-  const isAuthenticated = useIsAuthenticated();
+  const canBrowse = useLibraryAccess();
   const [reloadCount, setReloadCount] = useState(0);
   const [saveError, setSaveError] = useState("");
   const [loaded, setLoaded] = useState<{
@@ -40,7 +40,7 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
   }>({});
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!canBrowse) return;
     let active = true;
     getSavedTracks()
       .then((res) => {
@@ -53,7 +53,7 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
     return () => {
       active = false;
     };
-  }, [isAuthenticated, reloadCount]);
+  }, [canBrowse, reloadCount]);
 
   const addToLibrary = useCallback(async (id: string) => {
     setSaveError("");
@@ -65,7 +65,7 @@ export const LibraryProvider: React.FC<LibraryProviderProps> = ({
     }
   }, []);
 
-  const value: LibraryContextProps = isAuthenticated
+  const value: LibraryContextProps = canBrowse
     ? {
         tracks: loaded.tracks,
         isLoading: !loaded.tracks && !loaded.error,

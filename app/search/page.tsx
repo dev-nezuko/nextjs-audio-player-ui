@@ -6,17 +6,17 @@ import { Header } from "@/components/Header/Header";
 import { SearchBar } from "@/components/SearchBar/SearchBar";
 import { TracksLoader } from "@/components/SkeletonLoader/TracksLoader";
 import { Track } from "@/components/Track/Track";
-import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
+import { useLibraryAccess } from "@/hooks/useLibraryAccess";
 import { useTrackSearch } from "@/hooks/useTrackSearch";
 
 const SearchForm = () => {
-  const isAuthenticated = useIsAuthenticated();
+  const canBrowse = useLibraryAccess();
   const [query, setQuery] = useState("");
   const {
     tracks: searchedTracks,
     isLoading,
     error,
-  } = useTrackSearch(query, { enabled: isAuthenticated, delayMs: 400 });
+  } = useTrackSearch(query, { enabled: canBrowse, delayMs: 400 });
 
   return (
     <div className="bg-neutral-900 rounded-lg h-full w-full overflow-hidden overflow-y-auto">
@@ -24,7 +24,7 @@ const SearchForm = () => {
         <SearchBar
           value={query}
           onChange={setQuery}
-          disabled={!isAuthenticated}
+          disabled={!canBrowse}
           error={error}
         />
       </Header>

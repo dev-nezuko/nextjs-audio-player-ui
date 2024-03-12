@@ -3,14 +3,14 @@
 import { TbPlaylist } from "react-icons/tb";
 import { SavedTrack } from "../Track/SavedTrack";
 import { SavedTrackLoader } from "../SkeletonLoader/SavedTrackLoader";
-import { useIsAuthenticated } from "@/hooks/useIsAuthenticated";
+import { useLibraryAccess } from "@/hooks/useLibraryAccess";
 import { useLibrary } from "@/contexts/LibraryContext";
 
 export const Library = () => {
-  const isAuthenticated = useIsAuthenticated();
+  const canBrowse = useLibraryAccess();
   const { tracks, isLoading, error } = useLibrary();
 
-  if (!isAuthenticated) {
+  if (!canBrowse) {
     return null;
   }
 
