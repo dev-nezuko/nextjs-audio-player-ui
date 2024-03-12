@@ -8,18 +8,3 @@ export const transformTrack = (track: TrackType) => ({
   albumName: track.album.name,
   artist: track.artists[0]?.name || "Unknown artist",
 });
-
-export const getRandomSearch = () => {
-  const characters = "abcdefghijklmnopqrstuvwxyz";
-
-  const randomCharacter = characters.charAt(
-    Math.floor(Math.random() * characters.length),
-  );
-
-  const randomSearch =
-    Math.round(Math.random()) === 0
-      ? randomCharacter + "%"
-      : "%" + randomCharacter + "%";
-
-  return randomSearch;
-};
