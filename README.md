@@ -1,26 +1,71 @@
-# Spotify library browser
+# Crate
 
-A Next.js 14 prototype for Spotify track search, saved-library browsing and saving tracks to the current user's library. Despite the repository name and unused playback dependency, the implemented UI **does not play audio**. There is no server-side session or NextAuth integration.
+A Next.js music-library browser: search tracks, keep a saved library and flick through a catalogue in a tracklist layout. It is a UI prototype and **does not play audio**. There is no player, no streaming and no playback controls, despite the repository name.
 
-![Disconnected desktop view with no account data](docs/screenshots/desktop.png)
+Out of the box it runs on an offline demo catalogue of sixteen invented tracks, so you can try every screen without an account or network access. Optionally, it can connect to a Spotify account through a browser-only OAuth flow (authorization code with PKCE) and use the same screens against the live Web API.
 
-[390px mobile view](docs/screenshots/mobile.png)
+![Browse page in demo mode at 1440×900](docs/screenshots/desktop-browse.png)
 
-## Run the disconnected interface
+| Search | Mobile browse | Mobile library |
+| --- | --- | --- |
+| ![Search results for "night"](docs/screenshots/desktop-search.png) | ![Browse page at 390px](docs/screenshots/mobile-browse.png) | ![Saved tracks at 390px](docs/screenshots/mobile-library.png) |
 
-Use Node 22 and pnpm 8, matching the committed v6 lockfile:
+All tracks, artists and albums in the screenshots are fictional, and the artwork is drawn locally as SVG.
+
+## Run it
+
+Requires Node 22 (see `.nvmrc`) and pnpm 10, which Corepack provides from the `packageManager` field.
 
 ```sh
-pnpm install --frozen-lockfile --ignore-scripts
-cp .env.example .env.local
-pnpm dev --hostname 127.0.0.1
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-Open `http://127.0.0.1:3000`. Without a client ID, the interface explains setup and disables connection. Public environment variables are compiled into the browser bundle; **never add a client secret**.
+Open http://localhost:3000. With no environment file, the app is in demo mode: the header shows "Demo catalogue · offline", nothing leaves the browser, and saved tracks last for the current tab (sessionStorage).
 
-For intentional provider testing, register your own public Spotify client and the exact redirect `http://127.0.0.1:3000/callback`. Set `NEXT_PUBLIC_SPOTIFY_CLIENT_ID` and `NEXT_PUBLIC_APP_URL`, then restart/rebuild. Spotify requires HTTPS or an explicit loopback IP for redirects; `localhost` is not accepted under its [current redirect requirements](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri). Provider access, app restrictions and account eligibility have not been verified with a live account.
+For a production build:
 
-## Authentication boundary
+```sh
+pnpm build
+pnpm start
+```
+
+### Scripts
+
+| Command | What it does |
+| --- | --- |
+| `pnpm test` | Compiles the auth and track services with `tsconfig.test.json` and runs 19 `node:test` cases offline |
+| `pnpm lint` | ESLint 9 with `eslint-config-next` (core web vitals + TypeScript) |
+| `pnpm typecheck` | Generates route types and runs `tsc --noEmit` |
+| `pnpm build` | Next.js production build |
+
+## Connecting a live account (optional)
+
+1. Register your own app in the Spotify developer dashboard and add the redirect `http://127.0.0.1:3000/callback`. Spotify accepts plain HTTP only for an explicit loopback IP, not for `localhost` ([redirect URI rules](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri)).
+2. `cp .env.example .env.local` and set `NEXT_PUBLIC_SPOTIFY_CLIENT_ID` to your app's **public** client ID. Never add a client secret: every `NEXT_PUBLIC_` value is compiled into the browser bundle.
+3. Restart with `pnpm dev --hostname 127.0.0.1` (or rebuild), open http://127.0.0.1:3000 and use "Connect Spotify account".
+
+The live mode has been exercised only against mocked API responses in a headless browser. A real login, account restrictions and provider-side behaviour have not been verified.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+  Pages["Pages<br/>Browse · Search · Library"] --> Hooks["useTrackSearch<br/>LibraryContext"]
+  Hooks --> Tracks["services/tracks.service.ts"]
+  Tracks -- "no client ID" --> Demo["demo.catalogue.ts<br/>in-memory tracks,<br/>sessionStorage library"]
+  Tracks -- "client ID set" --> Api["api.service.ts<br/>fetch + 15 s timeout"]
+  Api --> Web["Web API<br/>/v1/search, /v1/me/tracks"]
+  Api -- "401" --> Auth["auth.service.ts<br/>single in-flight refresh"]
+```
+
+- `services/tracks.service.ts` is the only place that decides between the demo catalogue and the network. The demo returns the same response shapes as the live API, so pages and hooks do not branch on the mode.
+- `hooks/useTrackSearch.ts` debounces input (400 ms on the search page) and derives `isLoading` and `error` from the latest result, so stale responses from an earlier query are discarded.
+- `contexts/LibraryContext.tsx` owns the saved list, which track is being saved, and the set of saved IDs that turns "Save" into "Saved".
+- Artwork goes through `next/image` with the image optimizer disabled (`images.unoptimized`), so the app exposes no `/_next/image` endpoint.
+
+### Sign-in boundary (live mode)
 
 ```mermaid
 sequenceDiagram
@@ -29,33 +74,26 @@ sequenceDiagram
   B->>B: CSPRNG state and S256 verifier/challenge
   B->>B: Store 10-minute transaction in sessionStorage
   B->>S: Authorize public client
-  S-->>B: Code and state at callback
+  S-->>B: Code and state at /callback
   B->>B: Consume and validate state before exchange
   B->>S: Code + original verifier and redirect URI
   S-->>B: Access token and optional refresh token
 ```
 
-The [authorization-code PKCE flow](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow) needs no browser client secret. State is tab-bound, expires after ten minutes and is consumed once. Requests go to fixed Spotify HTTPS origins, use a 15-second timeout and retry an original API request once after a 401/refresh. Other HTTP failures do not trigger token refresh. An omitted rotated refresh token preserves the previous one.
+State is tab-bound, expires after ten minutes and can be used once. API calls go only to fixed HTTPS origins. A 401 triggers one token refresh and one retry of the original request. Other failures never spend a refresh. If the provider omits a rotated refresh token, the previous one is kept.
 
-Tokens remain readable to JavaScript in session storage; this reduces persistence but does not protect against XSS. Older local-storage tokens are purged. Logout clears local browser tokens and pending state; it does not revoke the provider grant. A server-side HttpOnly session would require a separate architecture change.
+Tokens sit in sessionStorage, which limits how long they persist but does not protect against XSS. Older localStorage tokens from earlier versions are purged on load. "Disconnect" clears the tab's tokens and pending state, but it does not revoke the grant with the provider. HttpOnly cookies would need a server-side session, which this app does not have.
 
-## UI and source
+## Design notes
 
-- `app/(home)/page.tsx`: disconnected introduction and initial track results.
-- `app/search/page.tsx`: debounced search; stale responses are ignored and failures clear loading state.
-- `contexts/LibraryContext.tsx`: saved tracks, save action and visible load/save errors.
-- `utils/auth.utils.ts` and `services/`: PKCE, tab session, token exchange and API requests.
+- **Identity:** a warm ink-and-amber palette and Fraunces headings over Work Sans, self-hosted through `@fontsource` so that builds need no font CDN. Tracks are numbered tracklist rows with the album in italic, like liner notes, instead of a grid of cards.
+- **States:** every list has loading skeletons, an empty message and an error message. Search explains what to type before the first query.
+- **Accessibility:** skip link, `nav`/`aside`/`main` landmarks, `aria-current` on the active tab, a labelled search field, labelled save buttons that report "in your library", a visible focus outline, and reduced-motion support.
+- **Responsive:** the desktop sidebar holds navigation and saved tracks. Below `md`, the sidebar becomes Browse/Search/Library tabs and the library has its own page.
 
-Navigation and save icons have button labels. Missing artwork uses a local SVG. The interface remains a prototype: saved tracks are sidebar-only on desktop, there is no library pagination or audio control, and broader component accessibility needs further review. Several legacy dependencies/configuration files are unused; they do not establish Firebase, Redux or NextAuth features.
+## Limitations
 
-## Verification
-
-```sh
-pnpm test
-pnpm build --no-lint
-pnpm start --hostname 127.0.0.1
-```
-
-Nine offline Node tests pass for S256/state, expiry/one-use behavior, secret-free exchange, refresh preservation, bounded retry and logout. The Next.js production build/type check passes; lint was explicitly skipped because this repository has no committed lint configuration. Chrome/Playwright verified the disconnected desktop/mobile layouts, missing-config guard, legacy-token purge, reactive logout with mocked API responses, and bad-state callback rejection before a provider request.
-
-No real Spotify login, saved tracks, account information or playback was used. The screenshots show the disconnected production build. Live OAuth consent, account/app restrictions, actual search/save behavior and provider-side revocation remain unverified. The historical README credential was removed from reachable history; its owner must rotate it if it was real. Successful local checks are not a claim of a working live Spotify integration.
+- No audio playback of any kind.
+- The live library is not paginated: only the first page of `/v1/me/tracks` is shown.
+- Saving is one-way; there is no "remove from library".
+- The demo library resets when the tab closes.
