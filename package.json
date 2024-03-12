@@ -1,0 +1,45 @@
+{
+  "name": "spotify",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prettier": "prettier --write .",
+    "test": "tsc utils/auth.utils.ts services/auth.service.ts services/api.service.ts --outDir .test-build --module commonjs --target es2022 --skipLibCheck --esModuleInterop && node --test test/*.cjs"
+  },
+  "engines": {
+    "node": ">=18.17.0",
+    "npm": ">=10.4.0"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.1.0",
+    "axios": "^1.6.7",
+    "firebase": "^10.8.0",
+    "flowbite": "^2.2.1",
+    "flowbite-react": "^0.7.2",
+    "next": "14.1.0",
+    "next-auth": "^4.24.5",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-icons": "^5.0.1",
+    "react-redux": "^9.1.0",
+    "react-spotify-web-playback": "^0.14.3",
+    "react-toastify": "^10.0.4",
+    "tailwind-merge": "^2.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.1.0",
+    "postcss": "^8",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
+  }
+}
